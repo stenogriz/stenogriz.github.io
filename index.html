@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>VisiBPM: describe any business process with three elements</title>
+<meta name="description" content="A lightweight tool for describing business processes without the complexity of BPMN. Three elements, one rule: processes interact only through documents.">
+<meta property="og:title" content="VisiBPM">
+<meta property="og:description" content="Describe any business process with three elements: process, document, external process link.">
+<meta property="og:type" content="website">
+
+<!--
+  Before publishing, replace these placeholders:
+    1. https://github.com/YOUR-USER/YOUR-REPO   the repository URL (header, hero, footer)
+    2. &lt;script&gt;.py                    the script's file name (Run section)
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Source+Serif+4:opsz,wght@8..60,400..600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --paper: #F3F5F8;
+    --ink: #172033;
+    --ink-soft: #465168;
+    --process-bg: #FFFFFF;
+    --doc: #F2D13D;
+    --doc-ink: #172033;
+    --doc-soft: #4D4200;
+    --link-bg: #DCE6F7;
+    --link-edge: #2C55A0;
+    --stop: #C0392B;
+    --code-bg: #E4E9F0;
+    --focus: #2C55A0;
+
+    --display: "Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
+    --text: "Source Serif 4", Georgia, "Times New Roman", serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #0F1521;
+      --ink: #E9EDF5;
+      --ink-soft: #A7B2C6;
+      --process-bg: #172033;
+      --link-bg: #1B2C4D;
+      --link-edge: #86A9EA;
+      --stop: #FF7F70;
+      --code-bg: #182032;
+      --focus: #86A9EA;
+    }
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--text);
+    font-size: 1.125rem;
+    line-height: 1.65;
+  }
+
+  a { color: inherit; }
+  :focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; border-radius: 4px; }
+
+  .wrap {
+    max-width: 70rem;
+    margin-inline: auto;
+    padding-inline: clamp(1.25rem, 4vw, 2.5rem);
+  }
+
+  /* ---------- Header ---------- */
+  .site-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-block: 1.5rem;
+  }
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: .65rem;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 1.15rem;
+    text-decoration: none;
+  }
+  .brand .logo { display: block; height: 2.75rem; width: auto; }
+  @media (prefers-color-scheme: dark) {
+    .logo .navy { fill: var(--ink); }
+    .logo .navy-line { stroke: var(--ink); }
+    .logo .blue { fill: var(--link-edge); }
+  }
+  .site-header .gh { font-family: var(--display); font-weight: 600; font-size: 1rem; }
+
+  /* ---------- Type ---------- */
+  h1, h2 {
+    font-family: var(--display);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin: 0;
+  }
+  h1 {
+    font-size: clamp(2.5rem, 6.4vw, 4.75rem);
+    line-height: 1.02;
+    font-weight: 750;
+    max-width: 17ch;
+    letter-spacing: -0.03em;
+  }
+  h2 {
+    font-size: clamp(1.7rem, 3.4vw, 2.4rem);
+    line-height: 1.12;
+    max-width: 22ch;
+  }
+  p { margin: 0 0 1em; }
+  .lede { font-size: 1.3rem; line-height: 1.55; max-width: 38rem; margin-top: 1.5rem; }
+
+  /* ---------- Buttons ---------- */
+  .actions { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1.75rem; margin-top: 2rem; }
+  .btn {
+    display: inline-block;
+    padding: .7rem 1.3rem;
+    border-radius: 8px;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 1.05rem;
+    text-decoration: none;
+  }
+  .btn:hover { background: var(--link-edge); color: #fff; }
+  .text-link { font-family: var(--display); font-weight: 600; font-size: 1.05rem; }
+
+  /* ---------- Diagram components ---------- */
+  .flow { display: flex; align-items: center; }
+
+  .node {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: .15rem;
+    min-height: 5.5rem;
+    padding: 1rem 1.25rem;
+    border: 2px solid var(--ink);
+    background: var(--process-bg);
+  }
+  .node b { font-family: var(--display); font-weight: 700; font-size: 1.1rem; line-height: 1.2; }
+  .node small { font-size: .875rem; line-height: 1.3; color: var(--ink-soft); }
+
+  .node.process { flex: 0 1 12.5rem; border-radius: 12px; }
+
+  .node.doc {
+    flex: 0 1 8.5rem;
+    background: var(--doc);
+    border-color: var(--doc-ink);
+    color: var(--doc-ink);
+    border-radius: 2px;
+  }
+  .node.doc small { color: var(--doc-soft); }
+  .node.doc::after {
+    content: "";
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 20px;
+    height: 20px;
+    background: linear-gradient(225deg, var(--paper) 0 50%, #CDAE22 50% 100%);
+    border-left: 2px solid var(--doc-ink);
+    border-bottom: 2px solid var(--doc-ink);
+  }
+
+  .node.link {
+    flex: 0 1 12.5rem;
+    border-radius: 999px;
+    background: var(--link-bg);
+    border-color: var(--link-edge);
+    padding-inline: 1.75rem;
+  }
+
+  .wire {
+    --c: var(--ink);
+    position: relative;
+    flex: 1 1 2rem;
+    min-width: 2rem;
+    height: 2px;
+  }
+  .wire::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--c);
+    transform-origin: left center;
+    animation: draw-x .5s ease-out both;
+    animation-delay: calc(var(--i, 0) * .45s + .3s);
+  }
+  .wire::after {
+    content: "";
+    position: absolute;
+    right: -1px;
+    top: 50%;
+    width: 10px;
+    height: 12px;
+    transform: translateY(-50%);
+    background: var(--c);
+    clip-path: polygon(0 0, 100% 50%, 0 100%);
+    animation: fade .2s both;
+    animation-delay: calc(var(--i, 0) * .45s + .7s);
+  }
+
+  .wire.stop { --c: var(--stop); }
+  .wire.stop::before {
+    background: repeating-linear-gradient(90deg, var(--c) 0 8px, transparent 8px 14px);
+    animation: none;
+  }
+  .wire.stop::after { display: none; }
+  .wire.stop .x {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    display: grid;
+    place-items: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border: 2px solid var(--c);
+    border-radius: 50%;
+    background: var(--paper);
+    color: var(--c);
+    font-family: var(--display);
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  @keyframes draw-x { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  @keyframes draw-y { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+  @keyframes fade   { from { opacity: 0; } to { opacity: 1; } }
+
+  @media (max-width: 47.5rem) {
+    .flow { flex-direction: column; align-items: stretch; max-width: 18rem; }
+    .node.process, .node.doc, .node.link { flex: none; }
+    .wire { flex: none; min-width: 0; width: 2px; height: 2.25rem; align-self: center; }
+    .wire::before { transform-origin: center top; animation-name: draw-y; }
+    .wire::after {
+      right: auto; top: auto; left: 50%; bottom: -1px;
+      width: 12px; height: 10px;
+      transform: translateX(-50%);
+      clip-path: polygon(0 0, 100% 0, 50% 100%);
+    }
+    .wire.stop::before { background: repeating-linear-gradient(180deg, var(--c) 0 8px, transparent 8px 14px); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .wire::before, .wire::after { animation: none; }
+  }
+
+  /* ---------- Hero ---------- */
+  .hero { padding-block: clamp(2rem, 6vw, 4.5rem) clamp(2.5rem, 6vw, 4rem); }
+  .hero-figure { margin: clamp(2.5rem, 6vw, 4rem) 0 0; }
+  .hero-figure figcaption { margin-top: 1.25rem; font-size: .95rem; color: var(--ink-soft); }
+
+  .elements {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.5rem 2.5rem;
+    margin: 2.5rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .elements li { max-width: 22rem; }
+  .elements b { display: flex; align-items: center; gap: .6rem; font-family: var(--display); font-size: 1.15rem; margin-bottom: .25rem; }
+  .elements p { margin: 0; font-size: 1.02rem; line-height: 1.55; color: var(--ink-soft); }
+  .glyph { flex: none; width: 1.35rem; height: 1rem; border: 2px solid var(--ink); background: var(--process-bg); border-radius: 4px; }
+  .glyph.doc { background: var(--doc); border-color: var(--doc-ink); border-radius: 1px; }
+  .glyph.link { background: var(--link-bg); border-color: var(--link-edge); border-radius: 999px; }
+
+  /* ---------- Sections ---------- */
+  .section { padding-block: clamp(3rem, 7vw, 5.5rem); }
+
+  .rule-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+    gap: 2.5rem clamp(2rem, 6vw, 5rem);
+    align-items: start;
+  }
+  .rule-grid .prose { margin-top: 1.5rem; max-width: 34rem; }
+  .compare { display: grid; gap: 2.25rem; margin: 0; }
+  .compare figure { margin: 0; }
+  .compare figcaption { margin-top: .9rem; font-size: .95rem; color: var(--ink-soft); }
+  .compare .node { min-height: 4rem; padding: .7rem 1rem; }
+  @media (min-width: 47.51rem) {
+    .compare .node.process { flex-basis: 9rem; }
+    .compare .node.doc { flex-basis: 7rem; }
+  }
+
+  .questions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 2rem 2.5rem;
+    margin: 2.5rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .questions .q {
+    display: block;
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: clamp(2.4rem, 5vw, 3.6rem);
+    line-height: 1;
+    letter-spacing: -0.03em;
+    margin-bottom: .6rem;
+  }
+  .questions p { margin: 0; max-width: 20rem; }
+
+  .run { max-width: 50rem; }
+  .run p { margin: 1.25rem 0 .75rem; }
+  .run h2 + p { margin-top: 1.5rem; }
+  pre {
+    margin: 0;
+    padding: 1rem 1.25rem;
+    background: var(--code-bg);
+    border-radius: 8px;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: .95rem;
+    line-height: 1.7;
+  }
+
+  .site-footer { padding-block: 2.5rem 3.5rem; font-size: .95rem; color: var(--ink-soft); }
+  .site-footer a { color: var(--ink); }
+
+  @media (max-width: 60rem) {
+    .rule-grid { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media (max-width: 47.5rem) {
+    .elements, .questions { grid-template-columns: minmax(0, 1fr); }
+    .elements li, .questions p { max-width: none; }
+    .lede { font-size: 1.2rem; }
+  }
+</style>
+</head>
+
+<body>
+  <div class="wrap">
+    <header class="site-header">
+      <a class="brand" href="#top" id="top" aria-label="VisiBPM, back to top">
+        <svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="10 22 381 82" role="img" aria-label="VisiBPM">
+          <path d="M46 65.1H91" fill="none" class="navy-line" stroke="#02274A" stroke-width="3.7"/>
+          <path d="M100 40.5H95.2Q90.9 40.5 90.9 44.8V83.8Q90.9 88.1 95.2 88.1H100" fill="none" class="navy-line" stroke="#02274A" stroke-width="3.6"/>
+          <rect class="navy" x="11.24" y="47.46" width="33.34" height="34.95" rx="3.2" fill="#02274A"/>
+          <rect class="blue" x="54.39" y="52.54" width="28.61" height="25.09" rx="3.2" fill="#0E61C0"/>
+          <path d="M103.85 23.48H127.42L137.72 33.78V53.60Q137.72 56.00 135.32 56.00H103.85Q101.45 56.00 101.45 53.60V25.88Q101.45 23.48 103.85 23.48Z" fill="#54AD40"/><path d="M127.42 23.48V33.78H137.72Z" fill="#A3CF92"/>
+          <path d="M104.50 71.14H127.40L137.70 81.44V100.41Q137.70 102.81 135.30 102.81H104.50Q102.10 102.81 102.10 100.41V73.54Q102.10 71.14 104.50 71.14Z" fill="#F99D20"/><path d="M127.40 71.14V81.44H137.70Z" fill="#FBC36E"/>
+          <path class="navy" fill="#02274A" fill-rule="evenodd" d="M159.53 45H168.27L180.4 81.5L192.53 45H201.27L184.84 91H175.96ZM205.6 58.2H213.48V91H205.6ZM209.54 43.75a4.55 4.55 0 1 0 0.01 0ZM250.15 58.2H257.9V91H250.15ZM254.03 43.75a4.55 4.55 0 1 0 0.01 0ZM219.1 87.18L222.29 82.31C225.64 84.1 228.78 86.01 232.78 85.58C236.39 85.19 238.39 82.63 235.94 79.37C235.53 78.84 234.8 78.92 234.22 78.72C228.69 76.79 220.09 75.21 220.1 67.69C220.11 55.4 239.12 54.73 243.36 61.44C242.77 62.86 241.49 65 240.19 65.85C238.65 65.46 237.22 64.38 235.62 63.94C231.88 62.91 226.42 63.71 228.19 68.81C229.51 69.55 230.87 70.37 232.29 70.9C233.04 71.18 233.93 71.13 234.71 71.35C238.3 72.38 241.99 74.14 243.78 77.53C246.41 82.5 243.07 88.87 238.23 90.8C232.76 92.98 223.04 91.79 219.1 87.18Z"/>
+          <path class="blue" fill="#0E61C0" fill-rule="evenodd" d="M267.16 45.0H278.06C283.1 45 288.57 44.63 293.06 47.38C298.1 50.48 299.66 57.92 296.24 62.8C295.09 64.44 293.42 65.47 291.79 66.56C293.46 67.52 295.43 68.36 296.79 69.77C301.32 74.51 300.9 82.64 296.25 87.07C293.08 90.1 288.54 90.94 284.31 90.98L280.19 90.98L278.81 90.98L278.31 90.98L278.06 91H267.16ZM274.87 51.78H278.11C283.02 51.78 291.43 51.73 289.75 59.31C288.99 62.78 285.62 63.87 282.44 64.02C281.44 64.07 280.44 64.08 279.43 64.07L278.48 64.05L278.01 64.12H274.87ZM274.87 70.63H278.11C282.46 70.63 288.55 69.88 290.98 74.45C291.63 75.68 291.88 76.97 291.6 78.34C290.74 82.46 287.44 84.07 283.5 84.17L279.94 84.2L278.83 84.2L278.1 84.24H274.87ZM307.1 45.0H318.06C326.37 45 335.12 45.64 337.96 54.98C338.86 57.93 339.03 60.81 338.26 63.82C336.71 69.87 332.31 72.98 326.43 74.37C324.63 74.8 322.78 74.84 320.93 74.86L319.19 74.88L318.46 74.89L318.09 74.88H314.82V91.0H307.1ZM314.82 51.85H318.09C320.13 51.85 322.39 51.71 324.39 52.18C329.25 53.32 331.13 58 330 62.57C329.19 65.87 325.75 67.56 322.61 67.93C321.61 68.05 320.6 68.04 319.6 68.04L318.65 68.03L318.08 68.08H314.82ZM345.2 45H355.17L367.575 72.25L379.98 45H389.95V91H382.33V56.8L370.6 83H364.55L352.78 56.8V91H345.2Z"/>
+        </svg>
+      </a>
+      <a class="gh" href="https://github.com/stenogriz/VisiBPM">GitHub</a>
+    </header>
+
+    <main>
+      <section class="hero">
+        <h1>Describe any business process with three elements.</h1>
+        <p class="lede">Map how your business works without the complexity of BPMN. You arrange three kinds of element, and the diagram enforces one rule: processes interact only through documents.</p>
+        <div class="actions">
+          <a class="btn" href="https://github.com/stenogriz/VisiBPM">View on GitHub</a>
+          <a class="text-link" href="#run">Run it yourself</a>
+        </div>
+
+        <figure class="hero-figure">
+          <div class="flow" role="img" aria-label="Example diagram: the process Take order produces the document Order. The process Prepare shipment reads it and produces the document Invoice, which goes to the external process Accounting.">
+            <div class="node link"><b>Customer</b><small>External process link</small></div>
+            <span class="wire" style="--i:0"></span>
+            <div class="node doc"><b>Order</b><small>Document</small></div>
+            <span class="wire" style="--i:1"></span>
+            <div class="node process"><b>Prepare shipment</b><small>Process</small></div>
+            <span class="wire" style="--i:2"></span>
+            <div class="node doc"><b>Invoice</b><small>Document</small></div>
+            <span class="wire" style="--i:3"></span>
+            <div class="node link"><b>Accounting</b><small>External process link</small></div>
+          </div>
+          <figcaption>An example diagram: an order moves from intake to shipping, and the invoice leaves for accounting.</figcaption>
+        </figure>
+
+        <ul class="elements">
+          <li>
+            <b><span class="glyph" aria-hidden="true"></span>Process</b>
+            <p>Something your business does with information.</p>
+          </li>
+          <li>
+            <b><span class="glyph doc" aria-hidden="true"></span>Document</b>
+            <p>The information itself: an order, an invoice, a form.</p>
+          </li>
+          <li>
+            <b><span class="glyph link" aria-hidden="true"></span>External process link</b>
+            <p>A pointer to a process that lives outside this diagram.</p>
+          </li>
+        </ul>
+      </section>
+
+      <section class="section" aria-labelledby="rule">
+        <div class="rule-grid">
+          <div>
+            <h2 id="rule">Processes interact only through documents</h2>
+            <div class="prose">
+              <p>In business terms, this means one thing: information has to flow between processes. The diagram enforces it, so a direct link from one process to another is not allowed.</p>
+              <p>What about goods, items, and shipments? Every physical object comes with a document, such as an invoice, an order, or another form. Model the document and the object is covered.</p>
+            </div>
+          </div>
+
+          <div class="compare">
+            <figure>
+              <div class="flow" role="img" aria-label="Not allowed: Process A linked directly to Process B.">
+                <div class="node process"><b>Process A</b></div>
+                <span class="wire stop"><span class="x" aria-hidden="true">×</span></span>
+                <div class="node process"><b>Process B</b></div>
+              </div>
+              <figcaption>Not allowed: a direct link between two processes.</figcaption>
+            </figure>
+            <figure>
+              <div class="flow" role="img" aria-label="Allowed: Process A produces a Document, which Process B receives.">
+                <div class="node process"><b>Process A</b></div>
+                <span class="wire" style="--i:4"></span>
+                <div class="node doc"><b>Document</b></div>
+                <span class="wire" style="--i:5"></span>
+                <div class="node process"><b>Process B</b></div>
+              </div>
+              <figcaption>Allowed: the document carries the information from A to B.</figcaption>
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="describe">
+        <h2 id="describe">Describing a process takes three answers</h2>
+        <ul class="questions">
+          <li>
+            <span class="q">Who</span>
+            <p>Who works with the input information?</p>
+          </li>
+          <li>
+            <span class="q">When</span>
+            <p>When do the results need to be available?</p>
+          </li>
+          <li>
+            <span class="q">What</span>
+            <p>What is the essential action that turns the input into output information?</p>
+          </li>
+        </ul>
+      </section>
+
+      <section class="section run" id="run" aria-labelledby="run-title">
+        <h2 id="run-title">One script, one dependency</h2>
+        <p>The program is a single Python script. It needs only PySide6 to run.</p>
+<pre><code>pip install PySide6
+python main.pyw</code></pre>
+        <p>Need a binary for a machine without Python? Build one with PyInstaller.</p>
+<pre><code>pip install pyinstaller
+pyinstaller --onefile --windowed --icon process_diagram_editor.ico main.pyw</code></pre>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <a href="https://github.com/stenogriz/VisiBPM">Source on GitHub</a>
+      <br />
+      <img alt="stars" src="https://img.shields.io/github/stars/stenogriz/visibpm.svg" />
+      <img alt="forks" src="https://img.shields.io/github/forks/stenogriz/visibpm.svg" />
+      <img alt="forks" src="https://img.shields.io/github/contributors/stenogriz/visibpm.svg" />
+      <img alt="forks" src="https://img.shields.io/github/license/stenogriz/visibpm.svg" />
+    </footer>
+  </div>
+</body>
+</html>
