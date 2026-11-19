@@ -385,7 +385,7 @@
 
         <figure class="hero-figure">
           <div class="flow" role="img" aria-label="Example diagram: the process Take order produces the document Order. The process Prepare shipment reads it and produces the document Invoice, which goes to the external process Accounting.">
-            <div class="node link"><b>Customer</b><small>External process link</small></div>
+            <div class="node link"><b>Customer</b><small>External process</small></div>
             <span class="wire" style="--i:0"></span>
             <div class="node doc"><b>Order</b><small>Document</small></div>
             <span class="wire" style="--i:1"></span>
@@ -393,7 +393,7 @@
             <span class="wire" style="--i:2"></span>
             <div class="node doc"><b>Invoice</b><small>Document</small></div>
             <span class="wire" style="--i:3"></span>
-            <div class="node link"><b>Accounting</b><small>External process link</small></div>
+            <div class="node link"><b>Accounting</b><small>External process</small></div>
           </div>
           <figcaption>An example diagram: an order moves from external customer process to order processing, and the invoice leaves for accounting.</figcaption>
         </figure>
@@ -420,7 +420,9 @@
             <h2 id="rule">Processes interact only through documents</h2>
             <div class="prose">
               <p>In business terms, this means one thing: information has to flow between processes. The diagram enforces it, so a direct link from one process to another is not allowed.</p>
+              <p>A document is not just a written or printed piece of paper. Every information channel with the fixed information is a document. A spoken word, SMS, e-mail message, DB record, or journal entry are also examples of the documents.</p>
               <p>What about goods, items, and shipments? Every physical object comes with a document, such as an invoice, an order, or another form. Model the document and the object is covered.</p>
+              <p>All decision making and process handling (those primitives made BPMN diagrams overly complex) should be described in plain english as a part of the process.</p>
             </div>
           </div>
 
